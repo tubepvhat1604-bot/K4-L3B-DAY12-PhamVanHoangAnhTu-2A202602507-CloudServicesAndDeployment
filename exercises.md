@@ -26,10 +26,8 @@ Chạy service và gọi `/ask` vài lần. Dán một dòng log JSON bạn thu 
 nêu **hai** việc bạn làm được với dòng log đó mà `print("đã trả lời xong")`
 không làm được.
 
-(THAY BẰNG DÒNG LOG CỦA BẠN — xem bằng `docker compose logs agent`)
-
 ```json
-{"event": "ask_completed", "level": "info", "timestamp": "2026-09-29T02:03:39.878571+00:00", "user_id": "sv01", "tokens_in": 3, "tokens_out": 37, "cost_usd": 2.265e-05}
+{"event": "ask_completed", "level": "info", "timestamp": "2026-09-29T02:40:13.477541+00:00", "user_id": "sv01", "tokens_in": 3, "tokens_out": 41, "cost_usd": 2.505e-05}
 ```
 
 1. Lọc và cộng theo trường: lọc `event = ask_completed`, nhóm theo `user_id` rồi cộng `cost_usd` để biết user nào tiêu nhiều tiền nhất, hoặc cộng `tokens_in`/`tokens_out` để theo dõi lượng token. Dòng `print` chỉ là một câu chữ, không có trường nào để lọc hay cộng.
@@ -49,12 +47,12 @@ docker images | grep agent
 
 | Bản | Dung lượng |
 |-----|-----------|
-| 1 stage (bản đầu) | ... (TỰ ĐO VÀ ĐIỀN) |
-| Multi-stage | ... (TỰ ĐO VÀ ĐIỀN) |
+| 1 stage (bản đầu) | 1.73 GB |
+| Multi-stage | 271 MB |
 
 Giải thích: phần dung lượng chênh lệch đó là những gì?
 
-Phần chênh lệch chủ yếu đến từ base image: `python:3.11` bản đầy đủ dựa trên Debian đầy đủ, mang theo trình biên dịch gcc, header C, git, các thư viện phát triển và tài liệu, còn `python:3.11-slim` chỉ giữ phần tối thiểu để chạy Python. Bản 1 stage còn `COPY . .` nên mang theo cả `tests/`, tài liệu và cache pip. Bản multi-stage chỉ copy thư mục `/install` (thư viện đã cài) từ stage builder sang, cộng với `app/` và `utils/`.
+Phần chênh lệch chủ yếu đến từ base image: Bản multi-stage nhỏ hơn khoảng 6,4 lần, chênh lệch gần 1,46 GB.`python:3.11` bản đầy đủ dựa trên Debian đầy đủ, mang theo trình biên dịch gcc, header C, git, các thư viện phát triển và tài liệu, còn `python:3.11-slim` chỉ giữ phần tối thiểu để chạy Python. Bản 1 stage còn `COPY . .` nên mang theo cả `tests/`, tài liệu và cache pip. Bản multi-stage chỉ copy thư mục `/install` (thư viện đã cài) từ stage builder sang, cộng với `app/` và `utils/`.
 
 ---
 
