@@ -1,12 +1,18 @@
 # Phiếu Phản Ánh — K4 Level 3B, Ngày 12
 
-
+> **Bài làm cá nhân.** Trả lời bằng lời của chính bạn, dựa trên những gì bạn
+> quan sát được khi chạy code — không sao chép đáp án của người khác.
 >
-Họ và tên: Phạm Văn Hoàng Anh Tú  Mã học viên: 2A202602507
+> Họ và tên: Phạm Văn Hoàng Anh Tú  Mã học viên: 2A202602507
 
 ---
 
 ### Câu 1 — Fail fast (CP1)
+
+Trong `Settings`, `agent_api_key` không có giá trị mặc định nên app chết ngay
+khi khởi động nếu thiếu biến môi trường. Hãy mô tả một tình huống cụ thể mà
+việc "chết sớm" này cứu bạn, so với việc để mặc định `"changeme"`.
+
 
 Vì `agent_api_key` không có mặc định, thiếu biến `AGENT_API_KEY` là `Settings()` báo lỗi ngay, không thể chạy tiếp với một giá trị "tạm". Em đã gặp thật khi deploy lên Railway: quên set `AGENT_API_KEY`, gọi `/ready` thì nhận 500 và log ghi rõ `ValidationError ... agent_api_key Field required`, nên em biết ngay thiếu gì và sửa trong vài phút. Nếu để mặc định `"changeme"` thì mọi thứ đều xanh, `/ask` vẫn trả lời, và bất kỳ ai gửi header `X-API-Key: changeme` (chuỗi này nằm công khai trong repo) đều dùng agent bằng tiền của em mà em không hề biết, cho tới khi nhìn hóa đơn cuối tháng.
 
@@ -46,7 +52,7 @@ docker images | grep agent
 
 Giải thích: phần dung lượng chênh lệch đó là những gì?
 
-Phần chênh lệch chủ yếu đến từ base image: Bản multi-stage nhỏ hơn khoảng 6,4 lần, chênh lệch gần 1,46 GB.`python:3.11` bản đầy đủ dựa trên Debian đầy đủ, mang theo trình biên dịch gcc, header C, git, các thư viện phát triển và tài liệu, còn `python:3.11-slim` chỉ giữ phần tối thiểu để chạy Python. Bản 1 stage còn `COPY . .` nên mang theo cả `tests/`, tài liệu và cache pip. Bản multi-stage chỉ copy thư mục `/install` (thư viện đã cài) từ stage builder sang, cộng với `app/` và `utils/`.
+Bản multi-stage nhỏ hơn khoảng 6,4 lần, chênh lệch gần 1,46 GB. Phần chênh lệch chủ yếu đến từ base image: `python:3.11` bản đầy đủ dựa trên Debian đầy đủ, mang theo trình biên dịch gcc, header C, git, các thư viện phát triển và tài liệu, còn `python:3.11-slim` chỉ giữ phần tối thiểu để chạy Python. Bản 1 stage còn `COPY . .` nên mang theo cả `tests/`, tài liệu và cache pip. Bản multi-stage chỉ copy thư mục `/install` (thư viện đã cài) từ stage builder sang, cộng với `app/` và `utils/`.
 
 ---
 
@@ -133,6 +139,7 @@ Nếu lưu trong dict Python, mỗi container có dict riêng trong RAM của n�
 Ghi lại **một** lỗi bạn gặp khi deploy lên cloud (build fail, health check
 timeout, sai REDIS_URL, app không đọc `$PORT`...): thông báo lỗi là gì, bạn
 tìm ra nguyên nhân bằng cách nào, và sửa ra sao?
+
 Deploy lần đầu từ GitHub lên Railway, service báo Online và `/health` trả `{"status":"ok",...}`, nhưng `/ready` trả `Internal Server Error`. Em gặp hai lỗi nối tiếp nhau:
 
 Lỗi 1 — thiếu secret. Mở Deployments → Deploy Logs thấy traceback kết thúc bằng `pydantic_core.ValidationError: 1 validation error for Settings` → `agent_api_key` → `Field required`, phát sinh trong hàm `get_store`. Railway đã tự tạo `REDIS_URL`, `RATE_LIMIT_PER_MINUTE`, `MONTHLY_BUDGET_USD`, `LOG_LEVEL` từ cấu hình trong repo, nhưng không có `AGENT_API_KEY` vì secret không nằm trong repo. Em thêm biến này trong tab Variables với một khóa mới sinh bằng `secrets.token_urlsafe(32)`. Em cũng rút ra là Railway chỉ lưu tạm khi sửa biến, phải bấm Deploy/Apply thì bản đang chạy mới nhận giá trị mới.
