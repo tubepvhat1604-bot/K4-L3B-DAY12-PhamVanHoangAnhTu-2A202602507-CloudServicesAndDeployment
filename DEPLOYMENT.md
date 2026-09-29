@@ -18,7 +18,7 @@
 
 | Mục | Nội dung |
 |-----|----------|
-| Public URL | Public URL | https://day12-agent-production-fc31.up.railway.app |
+| Public URL  | https://day12-agent-production-fc31.up.railway.app |
 | Platform | Railway |
 | Ngày deploy | 29/09/2026 |
 
@@ -30,7 +30,7 @@ Ghi tên biến và **nguồn giá trị**, không ghi giá trị:
 |------|--------|---------|
 | `PORT` | ✅ | platform tự gán |
 | `AGENT_API_KEY` | ✅ | đặt trong dashboard, không nằm trong repo |
-| `REDIS_URL` | ✅ | Redis add-on của Railway (`${{Redis.REDIS_URL}}`) |
+| `REDIS_URL` | ✅ | Redis add-on của Railway (`${{day12-redis.REDIS_URL}}`) |
 | `RATE_LIMIT_PER_MINUTE` | ✅ | 10 |
 | `MONTHLY_BUDGET_USD` | ✅ | 10.0 |
 | `LOG_LEVEL` | ✅ | INFO |
