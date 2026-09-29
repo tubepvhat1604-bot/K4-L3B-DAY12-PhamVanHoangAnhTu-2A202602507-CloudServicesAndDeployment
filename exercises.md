@@ -1,22 +1,16 @@
 # Phiếu Phản Ánh — K4 Level 3B, Ngày 12
 
-> **Bài làm cá nhân.** Trả lời bằng lời của chính bạn, dựa trên những gì bạn
-> quan sát được khi chạy code — không sao chép đáp án của người khác.
+
 >
-> Cách trả lời: thay dòng `> *Câu trả lời của bạn*` bằng câu trả lời.
-> `grade.py` đếm số câu đã trả lời (15 điểm cho 10 câu).
->
-> Họ và tên: Phạm Văn Hoàng Anh Tú  Mã học viên: 2A202602507
+Họ và tên: Phạm Văn Hoàng Anh Tú  Mã học viên: 2A202602507
 
 ---
 
 ### Câu 1 — Fail fast (CP1)
 
-Trong `Settings`, `agent_api_key` không có giá trị mặc định nên app chết ngay
-khi khởi động nếu thiếu biến môi trường. Hãy mô tả một tình huống cụ thể mà
-việc "chết sớm" này cứu bạn, so với việc để mặc định `"changeme"`.
+Vì `agent_api_key` không có mặc định, thiếu biến `AGENT_API_KEY` là `Settings()` báo lỗi ngay, không thể chạy tiếp với một giá trị "tạm". Em đã gặp thật khi deploy lên Railway: quên set `AGENT_API_KEY`, gọi `/ready` thì nhận 500 và log ghi rõ `ValidationError ... agent_api_key Field required`, nên em biết ngay thiếu gì và sửa trong vài phút. Nếu để mặc định `"changeme"` thì mọi thứ đều xanh, `/ask` vẫn trả lời, và bất kỳ ai gửi header `X-API-Key: changeme` (chuỗi này nằm công khai trong repo) đều dùng agent bằng tiền của em mà em không hề biết, cho tới khi nhìn hóa đơn cuối tháng.
 
-Khi deploy lên Railway, nếu em quên set `AGENT_API_KEY` trong tab Variables thì container vừa khởi động đã báo `ValidationError: agent_api_key Field required`, deploy đỏ ngay, health check không qua, em thấy lỗi và sửa trong vài phút. Nếu để mặc định `"changeme"` thì service vẫn lên xanh, `/ask` vẫn trả lời, và bất kỳ ai gửi header `X-API-Key: changeme` (chuỗi này nằm công khai trong repo) đều dùng agent bằng tiền của em mà em không hề biết, cho tới khi nhìn hóa đơn cuối tháng.
+Em cũng để ý rằng app không chết ngay lúc container khởi động mà chỉ lỗi khi có request đầu tiên cần đọc cấu hình (`/health` vẫn 200), vì `get_settings()` chỉ được gọi khi cần. Muốn fail fast thật sự ngay lúc khởi động thì có thể gọi `get_settings()` trong hàm `lifespan` của `main.py`.
 
 ---
 
@@ -139,5 +133,10 @@ Nếu lưu trong dict Python, mỗi container có dict riêng trong RAM của n�
 Ghi lại **một** lỗi bạn gặp khi deploy lên cloud (build fail, health check
 timeout, sai REDIS_URL, app không đọc `$PORT`...): thông báo lỗi là gì, bạn
 tìm ra nguyên nhân bằng cách nào, và sửa ra sao?
+Deploy lần đầu từ GitHub lên Railway, service báo Online và `/health` trả `{"status":"ok",...}`, nhưng `/ready` trả `Internal Server Error`. Em gặp hai lỗi nối tiếp nhau:
 
-> *Câu trả lời của bạn*
+Lỗi 1 — thiếu secret. Mở Deployments → Deploy Logs thấy traceback kết thúc bằng `pydantic_core.ValidationError: 1 validation error for Settings` → `agent_api_key` → `Field required`, phát sinh trong hàm `get_store`. Railway đã tự tạo `REDIS_URL`, `RATE_LIMIT_PER_MINUTE`, `MONTHLY_BUDGET_USD`, `LOG_LEVEL` từ cấu hình trong repo, nhưng không có `AGENT_API_KEY` vì secret không nằm trong repo. Em thêm biến này trong tab Variables với một khóa mới sinh bằng `secrets.token_urlsafe(32)`. Em cũng rút ra là Railway chỉ lưu tạm khi sửa biến, phải bấm Deploy/Apply thì bản đang chạy mới nhận giá trị mới.
+
+Lỗi 2 — `REDIS_URL` rỗng. Deploy lại xong `/ready` vẫn 500. Vì nếu Redis không trả lời thì `/ready` sẽ trả 503 chứ không phải 500, em đoán lỗi nằm ở cấu hình kết nối. Mở tab Variables thấy `REDIS_URL` hiển thị `<empty string>`: Railway tự đặt nó là `${{day12-redis.DATABASE_URL}}`, nhưng service Redis không có biến nào tên `DATABASE_URL` (chỉ có `REDIS_URL`, `REDISHOST`...), nên tham chiếu trả về chuỗi rỗng và app không tạo được client Redis. Em sửa thành `${{day12-redis.REDIS_URL}}`, deploy lại, `/ready` trả `{"status":"ready","redis":true}`.
+
+Điều em rút ra: `/health` xanh chưa có nghĩa là service dùng được, vì nó cố ý không đọc cấu hình hay gọi Redis. `/ready` mới phát hiện ra cả hai lỗi, đúng là lý do phải tách hai endpoint. Và không nên tin hoàn toàn cấu hình platform tự sinh, phải tự kiểm tra từng biến.

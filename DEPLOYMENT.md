@@ -18,9 +18,9 @@
 
 | Mục | Nội dung |
 |-----|----------|
-| Public URL | https://TODO-thay-bang-url-that.up.railway.app |
+| Public URL | Public URL | https://day12-agent-production-fc31.up.railway.app |
 | Platform | Railway |
-| Ngày deploy | SỬA THÀNH NGÀY DEPLOY |
+| Ngày deploy | 29/09/2026 |
 
 ## Biến Môi Trường Đã Set Trên Cloud
 
@@ -70,10 +70,28 @@ done; echo
 
 ## Kết Quả Chạy Thật
 
-Dán output của các lệnh trên vào đây:
 
 ```
-DÁN OUTPUT THẬT VÀO ĐÂY SAU KHI DEPLOY
+# 1. GET /health
+{"status":"ok","service":"day12-agent","version":"1.0.0"}
+
+# 2. GET /ready
+{"status":"ready","redis":true}
+
+# 3. POST /ask không có API key
+401
+
+# 4. POST /ask có API key (X-User-Id: sv-test)
+answer         : Ngắn gọn: Deploy la gi phụ thuộc vào ba yếu tố — cấu hình qua biến môi trường, ...
+user_id        : sv-test
+history_length : 0
+cost_usd       : 2.265E-05
+tokens         : @{in=3; out=37}
+
+# 5. POST /ask 15 lần liên tiếp (X-User-Id: sv-rate)
+200 200 200 200 200 200 200 200 200 200 429 429 429 429 429
+
+(Chạy bằng PowerShell trên Windows: curl.exe cho lệnh 1–2, Invoke-RestMethod/Invoke-WebRequest cho lệnh 3–5.)
 ```
 
 ## Ảnh Chụp Màn Hình
